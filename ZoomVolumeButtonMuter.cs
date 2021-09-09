@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Windows.Forms;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
@@ -8,8 +9,11 @@ namespace ZoomVolumeButtonMuter
 {
     public partial class ZoomVolumeButtonMuter : Form
     {
+        private static IEnumerable<MMDevice> _devices = GetDevices();
+
         public ZoomVolumeButtonMuter()
         {
+            RegisterDevicesForVolumeChangeEvents();
             InitializeComponent();
         }
 
@@ -17,13 +21,11 @@ namespace ZoomVolumeButtonMuter
         {
             this.WindowState = FormWindowState.Minimized;
             MinimizeToTray();
-            RegisterDevicesForVolumeChangeEvents();
         }
 
-        private void RegisterDevicesForVolumeChangeEvents()
+        private static void RegisterDevicesForVolumeChangeEvents()
         {
-            var devices = GetDevices();
-            foreach (var device in devices)
+            foreach (var device in _devices)
             {
                 device.AudioEndpointVolume.OnVolumeNotification +=
                     _ => CheckForVolumeChangeAndGiveMuteZoomIfItChanges();
@@ -36,7 +38,7 @@ namespace ZoomVolumeButtonMuter
             SendKeys.SendWait("%{a}"); // ALT-A to toggle mute
         }
 
-        private IEnumerable<MMDevice> GetDevices()
+        private static IEnumerable<MMDevice> GetDevices()
         {
             var enumerator = new MMDeviceEnumerator();
             for (var i = 0; i < WaveOut.DeviceCount; i++)
